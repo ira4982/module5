@@ -40,8 +40,7 @@ var showLoading = function (selector) {
 // with propValue in given 'string'
 var insertProperty = function (string, propName, propValue) {
   var propToReplace = "{{" + propName + "}}";
-  string = string
-    .replace(new RegExp(propToReplace, "g"), propValue);
+  string = string.replace(new RegExp(propToReplace, "g"), propValue);
   return string;
 };
 
@@ -63,34 +62,29 @@ var switchMenuToActive = function () {
 // On page load (before images or CSS)
 document.addEventListener("DOMContentLoaded", function (event) {
 
-// TODO: STEP 0: Look over the code from
-// *** start ***
-// to
-// *** finish ***
-// below.
-// We changed this code to retrieve all categories from the server instead of
-// simply requesting home HTML snippet. We now also have another function
-// called buildAndShowHomeHTML that will receive all the categories from the server
-// and process them: choose random category, retrieve home HTML snippet, insert that
-// random category into the home HTML snippet, and then insert that snippet into our
-// main page (index.html).
-//
-// TODO: STEP 1: Substitute [...] below with the *value* of the function buildAndShowHomeHTML,
-// so it can be called when server responds with the categories data.
+  // *************************************************************
+  // *** STEP 0 ***
+  // On first load, instead of just loading the home snippet directly,
+  // we retrieve all categories from the server. Once the data is
+  // received, we call buildAndShowHomeHTML(categories) to display
+  // a random category on the home page.
+  // *************************************************************
 
-// *** start ***
-// On first load, show home view
-showLoading("#main-content");
-$ajaxUtils.sendGetRequest(
-  allCategoriesUrl,
-  [...], // ***** <---- TODO: STEP 1: Substitute [...] ******
-  true); // Explicitly setting the flag to get JSON from server processed into an object literal
+  // *** start ***
+  // On first load, show home view
+  showLoading("#main-content");
+  $ajaxUtils.sendGetRequest(
+    allCategoriesUrl,
+    buildAndShowHomeHTML, // ***** STEP 1: callback to process categories *****
+    true); // Explicitly setting the flag to get JSON from server processed into an object literal
+  // *** finish ***
 });
-// *** finish **
 
 
+// *************************************************************
 // Builds HTML for the home page based on categories array
 // returned from the server.
+// *************************************************************
 function buildAndShowHomeHTML (categories) {
 
   // Load home snippet page
@@ -98,42 +92,40 @@ function buildAndShowHomeHTML (categories) {
     homeHtmlUrl,
     function (homeHtml) {
 
-      // TODO: STEP 2: Here, call chooseRandomCategory, passing it retrieved 'categories'
-      // Pay attention to what type of data that function returns vs what the chosenCategoryShortName
-      // variable's name implies it expects.
-      // var chosenCategoryShortName = ....
+      // *************************************************************
+      // STEP 2: Choose a random category from 'categories'
+      // chooseRandomCategory returns a category object,
+      // so we extract its 'short_name' property.
+      // *************************************************************
+      var chosenCategoryShortName = chooseRandomCategory(categories).short_name;
 
+      // *************************************************************
+      // STEP 3: Substitute {{randomCategoryShortName}} in the home html snippet
+      // with the chosen category short name.
+      // It needs to be surrounded by quotes so that the resulting call
+      // $dc.loadMenuItems('L') is syntactically valid.
+      // *************************************************************
+      var homeHtmlToInsertIntoMainPage =
+        insertProperty(homeHtml,
+                       "randomCategoryShortName",
+                       "'" + chosenCategoryShortName + "'");
 
-      // TODO: STEP 3: Substitute {{randomCategoryShortName}} in the home html snippet with the
-      // chosen category from STEP 2. Use existing insertProperty function for that purpose.
-      // Look through this code for an example of how to do use the insertProperty function.
-      // WARNING! You are inserting something that will have to result in a valid Javascript
-      // syntax because the substitution of {{randomCategoryShortName}} becomes an argument
-      // being passed into the $dc.loadMenuItems function. Think about what that argument needs
-      // to look like. For example, a valid call would look something like this:
-      // $dc.loadMenuItems('L')
-      // Hint: you need to surround the chosen category short name with something before inserting
-      // it into the home html snippet.
-      //
-      // var homeHtmlToInsertIntoMainPage = ....
-
-
-      // TODO: STEP 4: Insert the produced HTML in STEP 3 into the main page
-      // Use the existing insertHtml function for that purpose. Look through this code for an example
-      // of how to do that.
-      // ....
-
+      // *************************************************************
+      // STEP 4: Insert the produced HTML into the main page
+      // *************************************************************
+      insertHtml("#main-content", homeHtmlToInsertIntoMainPage);
     },
-    false); // False here because we are getting just regular HTML from the server, so no need to process JSON.
+    false); // False because we are getting regular HTML from the server.
 }
 
 
+// *************************************************************
 // Given array of category objects, returns a random category object.
+// *************************************************************
 function chooseRandomCategory (categories) {
-  // Choose a random index into the array (from 0 inclusively until array length (exclusively))
+  // Choose a random index into the array (from 0 to array.length - 1)
   var randomArrayIndex = Math.floor(Math.random() * categories.length);
-
-  // return category object with that randomArrayIndex
+  // Return category object with that random index
   return categories[randomArrayIndex];
 }
 
@@ -198,12 +190,8 @@ function buildCategoriesViewHtml(categories,
     var html = categoryHtml;
     var name = "" + categories[i].name;
     var short_name = categories[i].short_name;
-    html =
-      insertProperty(html, "name", name);
-    html =
-      insertProperty(html,
-                     "short_name",
-                     short_name);
+    html = insertProperty(html, "name", name);
+    html = insertProperty(html, "short_name", short_name);
     finalHtml += html;
   }
 
@@ -263,41 +251,18 @@ function buildMenuItemsViewHtml(categoryMenuItems,
   for (var i = 0; i < menuItems.length; i++) {
     // Insert menu item values
     var html = menuItemHtml;
-    html =
-      insertProperty(html, "short_name", menuItems[i].short_name);
-    html =
-      insertProperty(html,
-                     "catShortName",
-                     catShortName);
-    html =
-      insertItemPrice(html,
-                      "price_small",
-                      menuItems[i].price_small);
-    html =
-      insertItemPortionName(html,
-                            "small_portion_name",
-                            menuItems[i].small_portion_name);
-    html =
-      insertItemPrice(html,
-                      "price_large",
-                      menuItems[i].price_large);
-    html =
-      insertItemPortionName(html,
-                            "large_portion_name",
-                            menuItems[i].large_portion_name);
-    html =
-      insertProperty(html,
-                     "name",
-                     menuItems[i].name);
-    html =
-      insertProperty(html,
-                     "description",
-                     menuItems[i].description);
+    html = insertProperty(html, "short_name", menuItems[i].short_name);
+    html = insertProperty(html, "catShortName", catShortName);
+    html = insertItemPrice(html, "price_small", menuItems[i].price_small);
+    html = insertItemPortionName(html, "small_portion_name", menuItems[i].small_portion_name);
+    html = insertItemPrice(html, "price_large", menuItems[i].price_large);
+    html = insertItemPortionName(html, "large_portion_name", menuItems[i].large_portion_name);
+    html = insertProperty(html, "name", menuItems[i].name);
+    html = insertProperty(html, "description", menuItems[i].description);
 
     // Add clearfix after every second menu item
     if (i % 2 !== 0) {
-      html +=
-        "<div class='clearfix visible-lg-block visible-md-block'></div>";
+      html += "<div class='clearfix visible-lg-block visible-md-block'></div>";
     }
 
     finalHtml += html;
@@ -309,9 +274,7 @@ function buildMenuItemsViewHtml(categoryMenuItems,
 
 
 // Appends price with '$' if price exists
-function insertItemPrice(html,
-                         pricePropName,
-                         priceValue) {
+function insertItemPrice(html, pricePropName, priceValue) {
   // If not specified, replace with empty string
   if (!priceValue) {
     return insertProperty(html, pricePropName, "");
@@ -324,9 +287,7 @@ function insertItemPrice(html,
 
 
 // Appends portion name in parens if it exists
-function insertItemPortionName(html,
-                               portionPropName,
-                               portionValue) {
+function insertItemPortionName(html, portionPropName, portionValue) {
   // If not specified, return original string
   if (!portionValue) {
     return insertProperty(html, portionPropName, "");
@@ -336,7 +297,6 @@ function insertItemPortionName(html,
   html = insertProperty(html, portionPropName, portionValue);
   return html;
 }
-
 
 global.$dc = dc;
 
